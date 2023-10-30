@@ -2,41 +2,48 @@ import socket
 import sys
 from faker import Faker
 
-fake = Faker("jp-JP")
-name = fake.name()
+def main():
+    fake = Faker("jp-JP")
+    name = fake.name()
+    print(name)
 
-#create TCP/IP socket
-sock = socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
 
-server_address = "socket_file"
-print("connecting to {}".format(server_address))
+    #create TCP/IP socket
+    sock = socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
 
-try:
-    sock.connect(server_address)
-
-except socket.error as err:
-    print(err)
-    sys.exit(1)
-
-try:
-    message = input("Please input message -- > ")
-    message = message + ": by " + name
-    sock.sendall(message)
-
-    sock.settimeout(2)
+    server_address = "socket_file"
+    print("connecting to {}".format(server_address))
 
     try:
-        while True:
-            data = str(sock.recv(32))
+        sock.connect(server_address)
 
-            if data:
-                print("Server response: " + data)
-            else:
-                break
-    
-    except(TimeoutError):
-        print("Socket timeout, ending listening for server message")
+    except socket.error as err:
+        print(err)
+        sys.exit(1)
 
-finally:
-    print("closing socket")
-    sock.close()
+    try:
+        try:
+            while True:
+                message = input("Please input message -- > ")
+                message = "From " + name + ": " + message
+                sock.sendall(message.encode("utf-8"))
+
+                sock.settimeout(20)
+
+                data = sock.recv(1024)
+                data = data.decode("utf-8")
+
+                if data:
+                    print("Server response " + data)
+                else:
+                    break
+        
+        except(TimeoutError):
+            print("Socket timeout, ending listening for server message")
+
+    finally:
+        print("closing socket")
+        sock.close()
+        
+if __name__ == "__main__":
+    main()
